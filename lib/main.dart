@@ -8,6 +8,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return new MaterialApp(
         title: 'Startup Name Generator',
+        // 设置UI主题
+        theme: new ThemeData(
+          primaryColor: Colors.teal[50],
+        ),
         home: new RandomWords(),
       );
   }
@@ -17,7 +21,8 @@ class MyApp extends StatelessWidget {
 class RandomWordsState extends State<RandomWords> {
   // 以_开头的变量,是部件私有的
   final _suggestions = <WordPair> [];
-
+  // 收藏夹
+  final _saved = new Set<WordPair>();
   final _biggerFont = const TextStyle(fontSize: 18.0);
 
   Widget _buildSuggestions() {
@@ -40,12 +45,25 @@ class RandomWordsState extends State<RandomWords> {
   }
 
   Widget _buildRow(WordPair pair) {
+    final alreadySaved = _saved.contains(pair);
     // 定义每个listItem的组成和样式
     return new ListTile(
       title: new Text(
-        pair.asPascalCase,
+        // pair.asPascalCase,
+        pair.asCamelCase,
         style: _biggerFont,
-      )
+      ),
+      // 设置尾随的心形图标
+      trailing: new Icon(
+        alreadySaved ? Icons.favorite : Icons.favorite_border,
+        color: alreadySaved ? Colors.red : null,
+        ),
+        onTap: () {
+          setState(() {
+            if(alreadySaved) _saved.remove(pair);
+            else _saved.add(pair);
+          });
+        }
     );
   }
 
@@ -54,8 +72,46 @@ class RandomWordsState extends State<RandomWords> {
     return new Scaffold(
       appBar: new AppBar(
         title: new Text('Startup Name Generator'),
+        actions: <Widget>[
+          new IconButton(icon: new Icon(Icons.list), onPressed: _pushSaved),
+        ]
       ),
       body: _buildSuggestions(),
+    );
+  }
+  void _pushSaved() {
+    // 新建一个路由,并入栈
+    Navigator.of(context).push(
+      new MaterialPageRoute(
+        // 在builder里面构建新的新页面内容
+        builder: (context) {
+          // _saved里面存储了用户收藏的word pair
+          // titles是一个listTile
+          final tiles = _saved.map(
+            (pair) {
+              return new ListTile(
+                title: new Text(
+                  pair.asPascalCase,
+                  style: _biggerFont,
+                ),
+              );
+            },
+          );
+          final divided = ListTile
+          .divideTiles(
+            context: context,
+            tiles: tiles,
+          )
+          .toList();
+          // 返回最终的内容
+          return new Scaffold(
+            appBar: new AppBar(
+              title: new Text('Saved Suggestions'),
+            ),
+            body: new ListView(children: divided),
+          );
+        }
+      )
     );
   }
 }
